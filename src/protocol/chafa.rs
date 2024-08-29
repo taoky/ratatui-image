@@ -2,7 +2,7 @@
 use std::ffi::CString;
 
 use ansi_to_tui::IntoText;
-use image::{imageops::FilterType, DynamicImage, Rgb};
+use image::{DynamicImage, Rgb};
 use ratatui::{buffer::Buffer, layout::Rect};
 
 use super::{Protocol, StatefulProtocol};
@@ -40,11 +40,11 @@ impl Chafas {
 fn encode(img: &DynamicImage, rect: Rect) -> String {
     let width = rect.width as u32;
     let height = rect.height as u32;
-    let img = img.resize_exact(
-        width as u32,
-        height as u32,
-        FilterType::Triangle,
-    );
+    // let img = img.resize_exact(
+    //     width as u32,
+    //     height as u32,
+    //     FilterType::Triangle,
+    // );
 
     let symbol_map = unsafe {
         let symbol_map = chafa_sys::chafa_symbol_map_new();
@@ -73,9 +73,9 @@ fn encode(img: &DynamicImage, rect: Rect) -> String {
             canvas,
             chafa_sys::ChafaPixelType_CHAFA_PIXEL_RGB8,
             pixels.as_ptr(),
-            width as i32,
-            height as i32,
-            (width * channels) as i32,
+            pixels.width() as i32,
+            pixels.height() as i32,
+            (pixels.width() * channels) as i32,
         );
     }
 
