@@ -74,7 +74,7 @@ impl<'a> App<'a> {
         let ada = "./assets/Ada.png";
         let dyn_img = image::io::Reader::open(ada).unwrap().decode().unwrap();
 
-        let mut picker = Picker::from_termios().unwrap();
+        let mut picker = Picker::from_termios().unwrap_or(Picker::new((7, 14)));
         picker.guess_protocol();
 
         let image_static = picker

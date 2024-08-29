@@ -20,6 +20,9 @@ use crate::{
     FontSize, ImageSource, Resize, Result,
 };
 
+#[cfg(feature = "chafa")]
+use crate::protocol::chafa::{Chafas, StatefulChafa};
+
 #[derive(Clone, Copy, Debug)]
 pub struct Picker {
     pub font_size: FontSize,
@@ -41,14 +44,21 @@ pub enum ProtocolType {
     Sixel,
     Kitty,
     Iterm2,
+    #[cfg(feature = "chafa")]
+    Chafa,
 }
 
 impl ProtocolType {
     pub fn next(&self) -> ProtocolType {
         match self {
+            #[cfg(feature = "chafa")]
+            ProtocolType::Chafa => ProtocolType::Halfblocks,
             ProtocolType::Halfblocks => ProtocolType::Sixel,
             ProtocolType::Sixel => ProtocolType::Kitty,
             ProtocolType::Kitty => ProtocolType::Iterm2,
+            #[cfg(feature = "chafa")]
+            ProtocolType::Iterm2 => ProtocolType::Chafa,
+            #[cfg(not(feature = "chafa"))]
             ProtocolType::Iterm2 => ProtocolType::Halfblocks,
         }
     }
@@ -124,6 +134,13 @@ impl Picker {
     ) -> Result<Box<dyn Protocol>> {
         let source = ImageSource::new(image, self.font_size);
         match self.protocol_type {
+            #[cfg(feature = "chafa")]
+            ProtocolType::Chafa => Ok(Box::new(Chafas::from_source(
+                &source,
+                resize,
+                self.background_color,
+                size,
+            )?)),
             ProtocolType::Halfblocks => Ok(Box::new(Halfblocks::from_source(
                 &source,
                 resize,
@@ -161,6 +178,8 @@ impl Picker {
     pub fn new_resize_protocol(&mut self, image: DynamicImage) -> Box<dyn StatefulProtocol> {
         let source = ImageSource::new(image, self.font_size);
         match self.protocol_type {
+            #[cfg(feature = "chafa")]
+            ProtocolType::Chafa => Box::new(StatefulChafa::new(source)),
             ProtocolType::Halfblocks => Box::new(StatefulHalfblocks::new(source)),
             ProtocolType::Sixel => Box::new(StatefulSixel::new(source, self.is_tmux)),
             ProtocolType::Kitty => {
@@ -248,7 +267,10 @@ fn guess_protocol() -> (ProtocolType, bool) {
     }
 
     // Fallback.
-    (ProtocolType::Halfblocks, is_tmux)
+    #[cfg(feature = "chafa")]
+    return (ProtocolType::Chafa, is_tmux);
+    #[cfg(not(feature = "chafa"))]
+    return (ProtocolType::Halfblocks, is_tmux);
 }
 
 /// Crude guess based on the *existance* of some magic program specific env vars.

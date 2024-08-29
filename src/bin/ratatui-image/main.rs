@@ -42,7 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let image = image::io::Reader::open(&filename)?.decode()?;
 
     #[cfg(all(feature = "rustix", unix))]
-    let mut picker = Picker::from_termios()?;
+    let mut picker = Picker::from_termios().unwrap_or(Picker::new((7, 14)));
     #[cfg(not(all(feature = "rustix", unix)))]
     let mut picker = {
         let font_size = (8, 16);

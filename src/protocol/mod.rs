@@ -14,6 +14,8 @@ use crate::FontSize;
 use super::Resize;
 
 pub mod halfblocks;
+#[cfg(feature = "chafa")]
+pub mod chafa;
 pub mod iterm2;
 pub mod kitty;
 pub mod sixel;
