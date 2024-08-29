@@ -40,11 +40,6 @@ impl Chafas {
 fn encode(img: &DynamicImage, rect: Rect) -> String {
     let width = rect.width as u32;
     let height = rect.height as u32;
-    // let img = img.resize_exact(
-    //     width as u32,
-    //     height as u32,
-    //     FilterType::Triangle,
-    // );
 
     let symbol_map = unsafe {
         let symbol_map = chafa_sys::chafa_symbol_map_new();
@@ -89,12 +84,9 @@ fn encode(img: &DynamicImage, rect: Rect) -> String {
 
 impl Protocol for Chafas {
     fn render(&self, area: Rect, buf: &mut Buffer) {
-        for (y, line) in self.data.split('\n').enumerate() {
-            let text = line.into_text().unwrap();
-            assert!(text.lines.len() == 1);
-            for (x, span) in text.lines[0].spans.iter().enumerate() {
-                buf.set_span(area.x + x as u16, area.y + y as u16, span, 1);
-            }
+        let text = self.data.into_text().unwrap();
+        for (y, line) in text.lines.iter().enumerate() {
+            buf.set_line(area.x, area.y + y as u16, line, area.width);
         }
     }
 
