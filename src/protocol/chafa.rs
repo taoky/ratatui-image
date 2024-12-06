@@ -1,5 +1,5 @@
 // Modified from halfblocks.rs
-use std::ffi::CString;
+use std::ffi::CStr;
 
 use ansi_to_tui::IntoText;
 use image::{DynamicImage, Rgb};
@@ -76,10 +76,20 @@ fn encode<'a>(img: &DynamicImage, rect: Rect) -> ratatui::text::Text<'a> {
 
     let gstring = unsafe { chafa_sys::chafa_canvas_build_ansi(canvas) };
     let ansistr = unsafe { (*gstring).str_ };
-    let ansistr = unsafe { CString::from_raw(ansistr) };
+    let ansistr = unsafe { CStr::from_ptr(ansistr) };
     let ansistr = ansistr.to_string_lossy();
 
-    ansistr.to_string().into_text().expect("ansi_to_tui into_text failed")
+    let text = ansistr.to_string().into_text().expect("ansi_to_tui into_text failed");
+
+    // Free resources
+    unsafe {
+        chafa_sys::chafa_canvas_unref(canvas);
+        chafa_sys::chafa_canvas_config_unref(config);
+        chafa_sys::g_string_free(gstring, 1);
+        chafa_sys::chafa_symbol_map_unref(symbol_map);
+    }
+
+    text
 }
 
 impl Protocol for Chafas<'_> {
