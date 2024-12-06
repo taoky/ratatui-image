@@ -9,12 +9,12 @@ use super::{Protocol, StatefulProtocol};
 use crate::{ImageSource, Resize, Result};
 
 #[derive(Clone, Default)]
-pub struct Chafas {
-    data: String,
+pub struct Chafas<'a> {
+    data: ratatui::text::Text<'a>,
     rect: Rect,
 }
 
-impl Chafas {
+impl Chafas<'_> {
     /// Create a FixedHalfblocks from an image.
     ///
     /// The "resolution" is determined by the font size of the terminal. Smaller fonts will result
@@ -37,7 +37,7 @@ impl Chafas {
     }
 }
 
-fn encode(img: &DynamicImage, rect: Rect) -> String {
+fn encode<'a>(img: &DynamicImage, rect: Rect) -> ratatui::text::Text<'a> {
     let width = rect.width as u32;
     let height = rect.height as u32;
 
@@ -79,13 +79,12 @@ fn encode(img: &DynamicImage, rect: Rect) -> String {
     let ansistr = unsafe { CString::from_raw(ansistr) };
     let ansistr = ansistr.to_string_lossy();
 
-    ansistr.to_string()
+    ansistr.to_string().into_text().expect("ansi_to_tui into_text failed")
 }
 
-impl Protocol for Chafas {
+impl Protocol for Chafas<'_> {
     fn render(&self, area: Rect, buf: &mut Buffer) {
-        let text = self.data.into_text().unwrap();
-        for (y, line) in text.lines.iter().enumerate() {
+        for (y, line) in self.data.lines.iter().enumerate() {
             buf.set_line(area.x, area.y + y as u16, line, area.width);
         }
     }
@@ -96,13 +95,13 @@ impl Protocol for Chafas {
 }
 
 #[derive(Clone)]
-pub struct StatefulChafa {
+pub struct StatefulChafa<'a> {
     source: ImageSource,
-    current: Chafas,
+    current: Chafas<'a>,
     hash: u64,
 }
 
-impl StatefulChafa {
+impl StatefulChafa<'_> {
     pub fn new(source: ImageSource) -> Self {
         StatefulChafa {
             source,
@@ -112,7 +111,7 @@ impl StatefulChafa {
     }
 }
 
-impl StatefulProtocol for StatefulChafa {
+impl StatefulProtocol for StatefulChafa<'_> {
     fn needs_resize(&mut self, resize: &Resize, area: Rect) -> Option<Rect> {
         resize.needs_resize(&self.source, self.current.rect, area, false)
     }
